@@ -3,7 +3,7 @@ import sys
 
 # read FILE with CVs and weights
 FILENAME_ = sys.argv[1]
-# number of CVs for FES
+# number of CVs 
 NCV_ = int(sys.argv[2])
 # read minimum, maximum and number of bins for FES grid
 gmin = []; gmax = []; nbin = []
@@ -28,7 +28,7 @@ def get_indexes_from_index(index, nbin):
         indexes.append(kk%nbin[i])
     if(len(nbin)>=2):
       indexes.append( ( kk - indexes[len(nbin)-2] ) / nbin[len(nbin) -2] )
-    return indexes 
+    return tuple(indexes) 
 
 def get_indexes_from_cvs(cvs, gmin, dx):
     keys = []
@@ -87,13 +87,13 @@ for iblock in range(0, nblock):
     # define range
     i0 = iblock * BSIZE_ 
     i1 = i0 + BSIZE_
-    # build histogram dictionaries
+    # build histogram dictionary
     # keys are tuples of CV indices on the grid
     histo = {}; norm = 0.0
     # initialize histogram
     for i in range(0, nbins):
         # get the indexes in the multi-dimensional grid
-        key = tuple(get_indexes_from_index(i, nbin))
+        key = get_indexes_from_index(i, nbin)
         # set histogram to zero
         histo[key] = 0.0
     # cycle on points in the block
@@ -113,6 +113,7 @@ for iblock in range(0, nblock):
     norm_l.append(norm)
 
 # now we calculate weighted average across blocks
+# for each point in the histogram
 dict_ave = {}
 # cycle on keys - let's take them from histogram of first block
 for key in histo_l[0]:
@@ -152,7 +153,7 @@ log = open("fes."+str(BSIZE_)+".dat", "w")
 xs_old = []
 for i in range(0, nbins):
     # get the indexes in the multi-dimensional grid
-    key = tuple(get_indexes_from_index(i, nbin))
+    key = get_indexes_from_index(i, nbin)
     # get CV values for that grid point
     xs = get_points(key, gmin, dx)
     # add a blank line for gnuplot
