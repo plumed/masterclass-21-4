@@ -62,46 +62,91 @@ for lines in open(FILENAME_, "r").readlines():
     # read CVs
     cvs = []
     for i in range(0, NCV_): cvs.append(float(riga[i]))
-    # get indexes
+    # keys are tuples of CV indices on the grid
     key = get_indexes_from_cvs(cvs, gmin, dx)
     # read weight, if present
     if(len(riga)==NCV_+1):
       w = float(riga[NCV_])
     else: w = 1.0
-    # store into lists
+    # store into CV and weight lists
     cv_list.append(key)
-    w_list.append(w) 
+    w_list.append(w)
 
 # total number of data points
 ndata = len(cv_list)
 # number of blocks
 nblock = int(ndata/BSIZE_)
 
-# prepare histo dictionaries
-histo_ave = {} ; histo_ave2 = {};
+# prepare global lists of histo dictionaries
+# and normalizations, one entry per block
+histo_l = []; norm_l = []
 
+# not optimized for speed, but to be readable
 # cycle on blocks
 for iblock in range(0, nblock):
-    # define range in CV
+    # define range
     i0 = iblock * BSIZE_ 
     i1 = i0 + BSIZE_
-    # build histo
-    histo = {}
+    # build histogram dictionaries
+    # keys are tuples of CV indices on the grid
+    histo = {}; norm = 0.0
+    # initialize histogram
+    for i in range(0, nbins):
+        # get the indexes in the multi-dimensional grid
+        key = tuple(get_indexes_from_index(i, nbin))
+        # set histogram to zero
+        histo[key] = 0.0
+    # cycle on points in the block
     for i in range(i0, i1):
-        if cv_list[i] in histo: histo[cv_list[i]] += w_list[i]
-        else:                   histo[cv_list[i]]  = w_list[i] 
-    # calculate average histo in block
-    for key in histo: histo[key] /= float(BSIZE_)
-    # add to global histo dictionary
-    for key in histo: 
-        if key in histo_ave: 
-           histo_ave[key]   += histo[key]
-           histo_ave2[key]  += histo[key] * histo[key]
-        else:
-           histo_ave[key]   = histo[key]
-           histo_ave2[key]  = histo[key] * histo[key]
+        # get weight
+        w = w_list[i]
+        # and CVs tuple of indexes
+        cv = cv_list[i]
+        # increase norm
+        norm += w
+        # update histogram
+        histo[cv] += w
+    # normalization of the block
+    for key in histo: histo[key] /= norm
+    # store in global lists
+    histo_l.append(histo)
+    norm_l.append(norm)
 
-# print out fes and error 
+# now we calculate weighted average across blocks
+dict_ave = {}
+# cycle on keys - let's take them from histogram of first block
+for key in histo_l[0]:
+    # set average and normalization to zero
+    ave = 0.0; norm = 0.0
+    # cycle on blocks
+    for iblock in range(0, nblock):
+        # weight of the block
+        w = norm_l[iblock]
+        # increment normalization
+        norm += w
+        # increment weighted average
+        ave += w * histo_l[iblock][key]
+    # normalize and store in dictionary for average across blocks
+    dict_ave[key] = ave / norm
+
+# and the variance
+dict_var = {}
+# cycle on keys - let's take them from histogram of first block
+for key in histo_l[0]:
+    # set variance and normalization to zero
+    var = 0.0; norm = 0.0
+    # cycle on blocks
+    for iblock in range(0, nblock):
+        # weight of the block
+        w = norm_l[iblock]
+        # increment normalization
+        norm += w
+        # increment variance
+        var += math.pow(w * (histo_l[iblock][key]-dict_ave[key]), 2.0) 
+    # normalize and store in dictionary for variance across blocks 
+    dict_var[key] = var / norm / norm
+
+# now, print out fes and error 
 log = open("fes."+str(BSIZE_)+".dat", "w")
 # this is needed to add a blank line
 xs_old = []
@@ -123,19 +168,16 @@ for i in range(0, nbins):
     # print value of CVs
     for x in xs:
         log.write("%12.6lf " % x)
-    # calculate fes
-    nb = float(nblock)  
-    if key in histo_ave:
-       # average and variance 
-       aveh = histo_ave[key] / nb 
-       s2h  = (histo_ave2[key]/nb-aveh*aveh) * nb / ( nb - 1.0 )
-       # error
-       errh = math.sqrt( s2h / nb )
-       # free energy and error
-       fes = -KBT_ * math.log(aveh)
-       errf = KBT_ / aveh * errh 
+    # calculate fes and error
+    if key in dict_ave:
+       # fes
+       fes = -KBT_ * math.log(dict_ave[key]) 
+       # variance fes
+       varf = math.pow( KBT_ / dict_ave[key], 2.0) * dict_var[key]
+       # error fes 
+       errf = math.sqrt(varf)
        # printout
        log.write("   %12.6lf %12.6lf\n" % (fes, errf))
     else:
-       log.write("       Infinity\n")
+       log.write("       Inf Inf\n")
 log.close()
