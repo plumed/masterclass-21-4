@@ -2,7 +2,18 @@ import math
 import sys
 import numpy as np
 
-# read FILE with CVs and weights
+# Arguments of do_block_fes.py
+# - FILE: input file
+# - NCV: number of CVs
+# - *MIN: minimum value of CV
+# - *MAX: max value of CV
+# - *NBIN: # points in output free energy
+# - KBT: temperature in energy units (kJoule/mol)
+# - N: Block size
+#
+# * = repeat this block for each CV
+#
+# read FILE with CV trajectory and (optionally) weights
 FILENAME_ = sys.argv[1]
 # number of CVs 
 NCV_ = int(sys.argv[2])
@@ -62,6 +73,7 @@ def get_points_from_indexes(idx, gmin, dx):
         xs.append(gmin[i] + float(idx[i]) * dx[i])
     return xs
 
+# read CV/weight file and create numpy arrays
 def read_file(filename,gmin,dx,nbin):
     # read file and store lists 
     cvs=[]; ws=[]
