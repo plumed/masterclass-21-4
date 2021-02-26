@@ -3,7 +3,7 @@ import sys
 import numpy as np
 
 # Arguments of do_block_fes.py
-# - FILE: input file
+# - FILE: input file, 1 column per CV + weights (optional)
 # - NCV: number of CVs
 # - *MIN: minimum value of CV
 # - *MAX: max value of CV
@@ -12,23 +12,13 @@ import numpy as np
 # - N: Block size
 #
 # * = repeat this block for each CV
+# Example with 2 CVs:
+# python3 do_block_fes.py phi_psi_w.dat 2 -3.141593 3.141593 50 -3.141593 3.141593 50 2.494339 100
 #
-# read FILE with CV trajectory and (optionally) weights
-FILENAME_ = sys.argv[1]
-# number of CVs 
-NCV_ = int(sys.argv[2])
-# read minimum, maximum and number of bins for FES grid
-gmin = []; gmax = []; nbin = []
-for i in range(0, NCV_):
-    i0 = 3*i + 3 
-    gmin.append(float(sys.argv[i0]))
-    gmax.append(float(sys.argv[i0+1]))
-    nbin.append(int(sys.argv[i0+2]))
-# read KBT_
-KBT_ = float(sys.argv[3*NCV_+3])
-# block size 
-BSIZE_ = int(sys.argv[-1])
-
+#
+# Author: Max Bonomi (mbonomi@pasteur.fr)
+#
+# 
 # useful functions
 # nD indexes from 1D index
 def get_indexes_from_index(index, nbin):
@@ -100,7 +90,24 @@ def read_file(filename,gmin,dx,nbin):
     # return numpy arrays
     return np.array(cvs),np.array(ws)
 
-# 1) SETUP
+# 1) READ INPUT parameters
+# FILE with CV trajectory and (optionally) weights
+FILENAME_ = sys.argv[1]
+# number of CVs 
+NCV_ = int(sys.argv[2])
+# read minimum, maximum and number of bins for FES grid
+gmin = []; gmax = []; nbin = []
+for i in range(0, NCV_):
+    i0 = 3*i + 3 
+    gmin.append(float(sys.argv[i0]))
+    gmax.append(float(sys.argv[i0+1]))
+    nbin.append(int(sys.argv[i0+2]))
+# read KBT_
+KBT_ = float(sys.argv[3*NCV_+3])
+# block size 
+BSIZE_ = int(sys.argv[-1])
+
+# 2) SETUP
 # define bin sizes
 dx = []
 for i in range(0, NCV_):
@@ -108,7 +115,7 @@ for i in range(0, NCV_):
 # total numbers of bins
 nbins = 1
 for i in range(0, len(nbin)): nbins *= nbin[i]
-# read file and store lists 
+# read file and store arrays
 cv, w = read_file(FILENAME_, gmin, dx, nbin)
 # total number of data points
 ndata = cv.shape[0]
@@ -118,7 +125,7 @@ nblock = int(ndata/BSIZE_)
 histo = np.zeros((nbins,nblock))
 norm  = np.zeros(nblock)
 
-# 2) FILL IN ARRAYs
+# 3) FILL IN ARRAYs
 for iblock in range(0, nblock):
     # define range
     i0 = iblock * BSIZE_ 
@@ -132,14 +139,14 @@ for iblock in range(0, nblock):
     # normalization of the block
     histo[:,iblock] /= norm[iblock]
 
-# 3) CALCULATE STUFF
+# 4) CALCULATE STUFF
 # now we calculate weighted average across blocks
 ave   = np.sum(histo*norm, axis=1) / np.sum(norm)
 avet  = np.transpose(np.tile(ave, (nblock,1)))
 # and variance
 var = np.sum(np.power( norm * (histo-avet), 2), axis=1) / np.power(np.sum(norm), 2)
 
-# 4) PRINT FES + ERROR
+# 5) PRINT FES + ERROR
 log = open("fes."+str(BSIZE_)+".dat", "w")
 # this is needed to add a blank line
 xs_old = []
