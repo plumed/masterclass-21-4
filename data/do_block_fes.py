@@ -1,5 +1,6 @@
 import math
 import sys
+import numpy as np
 
 # read FILE with CVs and weights
 FILENAME_ = sys.argv[1]
@@ -17,6 +18,8 @@ KBT_ = float(sys.argv[3*NCV_+3])
 # block size 
 BSIZE_ = int(sys.argv[-1])
 
+# useful functions
+# nD indexes from 1D index
 def get_indexes_from_index(index, nbin):
     indexes = []
     # get first index
@@ -28,134 +31,111 @@ def get_indexes_from_index(index, nbin):
         indexes.append(kk%nbin[i])
     if(len(nbin)>=2):
       indexes.append( ( kk - indexes[len(nbin)-2] ) / nbin[len(nbin) -2] )
-    return tuple(indexes) 
-
-def get_indexes_from_cvs(cvs, gmin, dx):
-    keys = []
+    return tuple(indexes)
+ 
+# nD indexes from values
+def get_indexes_from_cvs(cvs, gmin, dx, nbin):
+    idx = []
     for i in range(0, len(cvs)):
-        keys.append(int( round( ( cvs[i] - gmin[i] ) / dx[i] ) ))
-    return tuple(keys)
+        j = int( round( ( cvs[i] - gmin[i] ) / dx[i] ) )
+        # check boundaries
+        if(j>=nbin[i]):
+          print("Point outside grid, check boundaries!")
+          exit()
+        idx.append(j)
+    return tuple(idx)
 
-def get_points(key, gmin, dx):
+# 1D index from values
+def get_index_from_cvs(cvs, gmin, dx, nbin):
+    # get nD indices from value 
+    idx = get_indexes_from_cvs(cvs, gmin, dx, nbin)
+    # transform in 1D index
+    i = idx[-1]
+    for j in range(len(nbin)-1,0,-1):
+        i = i*nbin[j-1]+idx[j-1]
+    return i
+
+# grid points from nD indexes
+def get_points_from_indexes(idx, gmin, dx):
     xs = []
-    for i in range(0, len(key)):
-        xs.append(gmin[i] + float(key[i]) * dx[i])
+    for i in range(0, len(idx)):
+        xs.append(gmin[i] + float(idx[i]) * dx[i])
     return xs
 
-# define bin size
+def read_file(filename,gmin,dx,nbin):
+    # read file and store lists 
+    cvs=[]; ws=[]
+    # number of cv
+    ncv = len(gmin)
+    for lines in open(filename, "r").readlines():
+        riga = lines.strip().split()
+        # check format
+        if(len(riga)!=ncv and len(riga)!=ncv+1):
+          print (filename,"is in the wrong format!")
+          exit()
+        # read CVs
+        cv = []
+        for i in range(0, ncv): cv.append(float(riga[i]))
+        # get index in flattened array
+        idx = get_index_from_cvs(cv, gmin, dx, nbin)
+        # read weight, if present
+        if(len(riga)==ncv+1):
+          w = float(riga[ncv])
+        else: w = 1.0
+        # store into cv and weight lists
+        cvs.append(idx)
+        ws.append(w)
+    # return numpy arrays
+    return np.array(cvs),np.array(ws)
+
+# 1) SETUP
+# define bin sizes
 dx = []
 for i in range(0, NCV_):
     dx.append( (gmax[i]-gmin[i])/float(nbin[i]-1) )
-
 # total numbers of bins
 nbins = 1
 for i in range(0, len(nbin)): nbins *= nbin[i]
-
 # read file and store lists 
-cv_list=[]; w_list=[]
-for lines in open(FILENAME_, "r").readlines():
-    riga = lines.strip().split()
-    # check format
-    if(len(riga)!=NCV_ and len(riga)!=NCV_+1):
-      print (FILENAME_,"is in the wrong format!")
-      exit()
-    # read CVs
-    cvs = []
-    for i in range(0, NCV_): cvs.append(float(riga[i]))
-    # keys are tuples of CV indices on the grid
-    key = get_indexes_from_cvs(cvs, gmin, dx)
-    # read weight, if present
-    if(len(riga)==NCV_+1):
-      w = float(riga[NCV_])
-    else: w = 1.0
-    # store into CV and weight lists
-    cv_list.append(key)
-    w_list.append(w)
-
+cv, w = read_file(FILENAME_, gmin, dx, nbin)
 # total number of data points
-ndata = len(cv_list)
+ndata = cv.shape[0]
 # number of blocks
 nblock = int(ndata/BSIZE_)
+# prepare numpy arrays for histogram and normalization
+histo = np.zeros((nbins,nblock))
+norm  = np.zeros(nblock)
 
-# prepare global lists of histo dictionaries
-# and normalizations, one entry per block
-histo_l = []; norm_l = []
-
-# not optimized for speed, but to be readable
-# cycle on blocks
+# 2) FILL IN ARRAYs
 for iblock in range(0, nblock):
     # define range
     i0 = iblock * BSIZE_ 
     i1 = i0 + BSIZE_
-    # build histogram dictionary
-    # keys are tuples of CV indices on the grid
-    histo = {}; norm = 0.0
-    # initialize histogram
-    for i in range(0, nbins):
-        # get the indexes in the multi-dimensional grid
-        key = get_indexes_from_index(i, nbin)
-        # set histogram to zero
-        histo[key] = 0.0
     # cycle on points in the block
     for i in range(i0, i1):
-        # get weight
-        w = w_list[i]
-        # and CVs tuple of indexes
-        cv = cv_list[i]
         # increase norm
-        norm += w
+        norm[iblock] += w[i]
         # update histogram
-        histo[cv] += w
+        histo[cv[i],iblock] += w[i]
     # normalization of the block
-    for key in histo: histo[key] /= norm
-    # store in global lists
-    histo_l.append(histo)
-    norm_l.append(norm)
+    histo[:,iblock] /= norm[iblock]
 
+# 3) CALCULATE STUFF
 # now we calculate weighted average across blocks
-# for each point in the histogram
-dict_ave = {}
-# cycle on keys - let's take them from histogram of first block
-for key in histo_l[0]:
-    # set average and normalization to zero
-    ave = 0.0; norm = 0.0
-    # cycle on blocks
-    for iblock in range(0, nblock):
-        # weight of the block
-        w = norm_l[iblock]
-        # increment normalization
-        norm += w
-        # increment weighted average
-        ave += w * histo_l[iblock][key]
-    # normalize and store in dictionary for average across blocks
-    dict_ave[key] = ave / norm
+ave   = np.sum(histo*norm, axis=1) / np.sum(norm)
+avet  = np.transpose(np.tile(ave, (nblock,1)))
+# and variance
+var = np.sum(np.power( norm * (histo-avet), 2), axis=1) / np.power(np.sum(norm), 2)
 
-# and the variance
-dict_var = {}
-# cycle on keys - let's take them from histogram of first block
-for key in histo_l[0]:
-    # set variance and normalization to zero
-    var = 0.0; norm = 0.0
-    # cycle on blocks
-    for iblock in range(0, nblock):
-        # weight of the block
-        w = norm_l[iblock]
-        # increment normalization
-        norm += w
-        # increment variance
-        var += math.pow(w * (histo_l[iblock][key]-dict_ave[key]), 2.0) 
-    # normalize and store in dictionary for variance across blocks 
-    dict_var[key] = var / norm / norm
-
-# now, print out fes and error 
+# 4) PRINT FES + ERROR
 log = open("fes."+str(BSIZE_)+".dat", "w")
 # this is needed to add a blank line
 xs_old = []
 for i in range(0, nbins):
     # get the indexes in the multi-dimensional grid
-    key = get_indexes_from_index(i, nbin)
-    # get CV values for that grid point
-    xs = get_points(key, gmin, dx)
+    idx = get_indexes_from_index(i, nbin)
+    # get values for grid point
+    xs = get_points_from_indexes(idx, gmin, dx)
     # add a blank line for gnuplot
     if(i == 0):
       xs_old = xs[:] 
@@ -166,19 +146,19 @@ for i in range(0, nbins):
             flag = 1
             xs_old = xs[:] 
       if (flag == 1): log.write("\n")
-    # print value of CVs
+    # print grid point 
     for x in xs:
         log.write("%12.6lf " % x)
     # calculate fes and error
-    if key in dict_ave:
+    if (ave[i]>0):
        # fes
-       fes = -KBT_ * math.log(dict_ave[key]) 
+       fes = -KBT_ * math.log(ave[i])
        # variance fes
-       varf = math.pow( KBT_ / dict_ave[key], 2.0) * dict_var[key]
+       varf = math.pow( KBT_ / ave[i], 2.0) * var[i]
        # error fes 
        errf = math.sqrt(varf)
        # printout
        log.write("   %12.6lf %12.6lf\n" % (fes, errf))
     else:
-       log.write("       Inf Inf\n")
+       log.write("   %12s %12s\n" % ("Inf","Inf"))
 log.close()
