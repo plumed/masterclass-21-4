@@ -132,11 +132,11 @@ for iblock in range(0, nblock):
     i1 = i0 + BSIZE_
     # cycle on points in the block
     for i in range(i0, i1):
-        # increase norm
-        norm[iblock] += w[i]
         # update histogram
         histo[cv[i],iblock] += w[i]
-    # normalization of the block
+    # calculate normalization of the block
+    norm[iblock] = np.sum(w[i0:i1])
+    # normalize block
     histo[:,iblock] /= norm[iblock]
 
 # 4) CALCULATE STUFF
