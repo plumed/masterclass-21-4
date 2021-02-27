@@ -125,7 +125,7 @@ nblock = int(ndata/BSIZE_)
 histo = np.zeros((nbins,nblock))
 norm  = np.zeros(nblock)
 
-# 3) FILL IN ARRAYs
+# 3) FILL IN HISTOGRAM ARRAY
 for iblock in range(0, nblock):
     # define range
     i0 = iblock * BSIZE_ 
@@ -139,7 +139,7 @@ for iblock in range(0, nblock):
     # normalize block
     histo[:,iblock] /= norm[iblock]
 
-# 4) CALCULATE STUFF
+# 4) CALCULATE WEIGHTED AVERAGE AND VARIANCE
 # now we calculate weighted average across blocks
 ave   = np.sum(histo*norm, axis=1) / np.sum(norm)
 avet  = np.transpose(np.tile(ave, (nblock,1)))
