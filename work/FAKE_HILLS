@@ -1,0 +1,5 @@
+#! FIELDS time phi sigma_phi height biasf
+#! SET multivariate false
+#! SET min_phi -pi
+#! SET max_phi pi
+0 0 0.3 0.0 8

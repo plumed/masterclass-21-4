@@ -1,0 +1,36 @@
+# Activate MOLINFO functionalities
+MOLINFO STRUCTURE=../data/dialaA.pdb 
+# Compute the backbone dihedral angle phi, defined by atoms C-N-CA-C
+# you should use MOLINFO shortcuts
+phi: TORSION ATOMS=@phi-2 
+# Compute the backbone dihedral angle psi, defined by atoms N-CA-C-N
+# here also you should to use MOLINFO shortcuts
+psi: TORSION ATOMS=@psi-2 
+# Activate well-tempered metadynamics in phi
+metad: METAD ARG=phi ...
+   # Deposit a Gaussian every 10000000 time steps (never!), with initial height equal to 0.0 kJ/mol 
+   PACE=10000000 HEIGHT=0.0 BIASFACTOR=8# <- this is the new stuff! 
+   # Gaussian width (sigma) should be chosen based on the CV fluctuations in unbiased run 
+   SIGMA=0.3 
+   # Gaussians will be written to file and also stored on grid 
+   FILE=work/FAKE_HILLS GRID_MIN=-pi GRID_MAX=pi
+   # Say that METAD should be restarting (= reading an existing HILLS file) 
+   RESTART=YES # <- this is the new stuff! 
+...
+
+# Use the metadynamics bias as argument
+as: REWEIGHT_BIAS ARG=metad.bias
+
+# Calculate histograms of phi and psi dihedrals every 50 steps
+# using the weights obtained from the metadynamics bias potentials (umbrella-sampling-like reweighting)
+# Look at the manual to understand the parameters of the HISTOGRAM action!
+hhphi: HISTOGRAM ARG=phi STRIDE=50 GRID_MIN=-pi GRID_MAX=pi GRID_BIN=50 BANDWIDTH=0.05 LOGWEIGHTS=as
+hhpsi: HISTOGRAM ARG=psi STRIDE=50 GRID_MIN=-pi GRID_MAX=pi GRID_BIN=50 BANDWIDTH=0.05 LOGWEIGHTS=as
+
+# Convert histograms h(s) to free energies F(s) = -kBT * log(h(s))
+ffphi: CONVERT_TO_FES GRID=hhphi
+ffpsi: CONVERT_TO_FES GRID=hhpsi
+
+# Print out the free energies F(s) to file once the entire trajectory is processed
+DUMPGRID GRID=ffphi FILE=ffphi.dat
+DUMPGRID GRID=ffpsi FILE=ffpsi.dat

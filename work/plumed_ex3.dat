@@ -1,0 +1,23 @@
+# Activate MOLINFO functionalities
+MOLINFO STRUCTURE=../data/dialaA.pdb
+
+# here goes the definitions of the phi and psi CVs
+phi: TORSION ATOMS=@phi-2
+psi: TORSION ATOMS=@psi-2
+
+# Activate well-tempered metadynamics in phi
+metad: METAD ARG=phi ...
+# Deposit a Gaussian every 10000000 time steps (never!), with initial height equal to 0.0 kJ/mol
+  PACE=10000000 HEIGHT=0.0 # <- this is the new stuff!
+# The bias factor and Gaussian width are the same as before
+  BIASFACTOR=8 SIGMA=0.3
+# Gaussians will be read from file and stored on grid
+# Make sure you specify the path the HILLS file produced in Exercise 2!
+  FILE=work/FAKE_HILLS GRID_MIN=-pi GRID_MAX=pi
+# Say that METAD should be restarting (= reading an existing HILLS file)
+  RESTART=YES # <- this is the new stuff!
+...
+
+# Print out the values of phi, psi and the metadynamics bias potential
+# Make sure you print out the 3 variables in the specified order at every step
+PRINT ARG=__FILL__ FILE=COLVAR_REWEIGHT STRIDE=__FILL__  # <- also change this one!

@@ -89,6 +89,7 @@ Let's now prepare a PLUMED input file to calculate:
 by completing the template below (whenever you see an highlighted __FILL__ string, this is a string that you must replace!):
 
 ```plumed
+#SOLUTIONFILE=work/plumed_ex1.dat
 # Activate MOLINFO functionalities
 MOLINFO STRUCTURE=__FILL__
 # Compute the backbone dihedral angle phi, defined by atoms C-N-CA-C
@@ -119,6 +120,7 @@ __Are both simulations long enough to visit all the relevant conformations or in
 In this exercise we will setup and perform a well-tempered metadynamics run using the backbone dihedral $\phi$ as collective variable. During the calculation, we will also monitor the behavior of the other backbone dihedral $\psi$.  Here you can find a sample `plumed.dat` file that you can use as a template.
 
 ```plumed
+#SOLUTIONFILE=work/plumed_ex2.dat
 # Activate MOLINFO functionalities
 MOLINFO STRUCTURE=__FILL__
 # Compute the backbone dihedral angle phi, defined by atoms C-N-CA-C
@@ -128,7 +130,7 @@ phi: TORSION ATOMS=__FILL__
 # here also you should to use MOLINFO shortcuts 
 psi: TORSION ATOMS=__FILL__
 # Activate well-tempered metadynamics in phi
-metad: __FILL__ ARG=__FILL__ ...
+metad: METAD ARG=__FILL__ ...
 # Deposit a Gaussian every 500 time steps, with initial height 
 # equal to 1.2 kJ/mol and bias factor equal to 8
   PACE=500 HEIGHT=1.2 BIASFACTOR=8
@@ -213,13 +215,14 @@ First of all, you need to prepare a `plumed_reweight.dat` file that is identical
 Here how the `plumed_reweight.dat` should look like:
 
 ```plumed
+#SOLUTIONFILE=work/plumed_ex3.dat
 # Activate MOLINFO functionalities
 MOLINFO STRUCTURE=__FILL__
 
 __FILL__ # here goes the definitions of the phi and psi CVs
 
 # Activate well-tempered metadynamics in phi
-metad: __FILL__ ARG=__FILL__ ...
+metad: METAD ARG=__FILL__ ...
 # Deposit a Gaussian every 10000000 time steps (never!), with initial height equal to 0.0 kJ/mol
   PACE=10000000 HEIGHT=0.0 # <- this is the new stuff!
 # The bias factor and Gaussian width are the same as before
@@ -247,6 +250,7 @@ where `traj_comp.xtc` is the metadynamics trajectory produced in exercise 2.  No
 As a result, PLUMED will produce a new `COLVAR_REWEIGHT` file with one additional column containing the metadynamics bias potential $V(s)$ calculated using all the Gaussians deposited along the entire trajectory.  You can easily obtain the weight $w$ of each frame using the expression $w\propto\exp\left(\frac{V(s)}{k_BT}\right)$ (umbrella-sampling-like reweighting). At this point, you can read the `COLVAR_REWEIGHT` file using a python notebook and compute a weighted histogram or, alternatively, if you want PLUMED to do the weighted histograms for you, you can add the following lines at the end of the `plumed_reweight.dat` file and re-run PLUMED driver:
 
 ```plumed
+#SOLUTIONFILE=work/plumed_ex4.dat
 # Use the metadynamics bias as argument
 as: REWEIGHT_BIAS ARG=__FILL__
 
