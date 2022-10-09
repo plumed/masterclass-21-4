@@ -1,5 +1,5 @@
 # Activate MOLINFO functionalities
-MOLINFO STRUCTURE=../data/dialaA.pdb
+MOLINFO STRUCTURE=../data/diala/dialaA.pdb
 
 # here goes the definitions of the phi and psi CVs
 phi: TORSION ATOMS=@phi-2

@@ -1,5 +1,5 @@
 # Activate MOLINFO functionalities
-MOLINFO STRUCTURE=../data/dialaA.pdb 
+MOLINFO STRUCTURE=../data/diala/dialaA.pdb 
 # Compute the backbone dihedral angle phi, defined by atoms C-N-CA-C
 # you should use MOLINFO shortcuts
 phi: TORSION ATOMS=@phi-2
