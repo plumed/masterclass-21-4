@@ -18,6 +18,7 @@ flowchart TB;
   C -.-> H[Metadynamics theory];
   C -.-> G[using pandas];
   G -.-> E;
+  H -.-> E;
   D ==> E[Lecture II];
   D --> F[solution];
   click A "ref1" "This lesson teaches you how to run umbrella sampling calculations. You will need to follow the instructions on installing gromacs and plumed within it to run your metadynamics simulation. However, you do not need to perform the exercises on umbrella sampling in order to perfom these exercises on metadynamics";
