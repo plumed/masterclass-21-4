@@ -20,4 +20,4 @@ metad: METAD ARG=phi ...
 
 # Print out the values of phi, psi and the metadynamics bias potential
 # Make sure you print out the 3 variables in the specified order at every step
-PRINT ARG=__FILL__ FILE=COLVAR_REWEIGHT STRIDE=__FILL__  # <- also change this one!
+PRINT ARG=phi,psi FILE=COLVAR_REWEIGHT STRIDE=10  # <- also change this one!
