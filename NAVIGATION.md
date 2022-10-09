@@ -14,8 +14,8 @@ This lesson was the fourth masterclass in the 2021 series.  You will likely be a
 flowchart TB;
   A[Umbrella sampling] -.-> C[Lecture I] 
   B[Block averaging theory] -.-> C
-  C ==> D[Instructions];
   C -.-> H[Metadynamics theory];
+  C ==> D[Instructions];
   C -.-> G[using pandas];
   G -.-> E;
   H -.-> E;
