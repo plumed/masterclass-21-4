@@ -13,7 +13,7 @@ metad: METAD ARG=phi ...
    # Gaussian width (sigma) should be chosen based on the CV fluctuations in unbiased run 
    SIGMA=0.3 
    # Gaussians will be written to file and also stored on grid 
-   FILE=work/FAKE_HILLS GRID_MIN=-pi GRID_MAX=pi
+   FILE=../work/FAKE_HILLS GRID_MIN=-pi GRID_MAX=pi
    # Say that METAD should be restarting (= reading an existing HILLS file) 
    RESTART=YES # <- this is the new stuff! 
 ...

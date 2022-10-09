@@ -13,7 +13,7 @@ metad: METAD ARG=phi ...
   BIASFACTOR=8 SIGMA=0.3
 # Gaussians will be read from file and stored on grid
 # Make sure you specify the path the HILLS file produced in Exercise 2!
-  FILE=work/FAKE_HILLS GRID_MIN=-pi GRID_MAX=pi
+  FILE=../work/FAKE_HILLS GRID_MIN=-pi GRID_MAX=pi
 # Say that METAD should be restarting (= reading an existing HILLS file)
   RESTART=YES # <- this is the new stuff!
 ...
