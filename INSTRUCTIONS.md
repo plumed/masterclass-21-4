@@ -354,7 +354,7 @@ __Please post the results of your simulations on Slack!__
 
 In this last exercise, we will tackle a real-life biological problem: studying the conformational transition of a complex biological system.  The system that we are going to study is the C-terminal domain (CTD) of the RfaH virulence factor from _Escherichia coli_. As shown in the figure below, this part of the system, which we refer to as RfaH-CTD, undergoes a dramatic conformational transformation from β-barrel to α-helical, which is stabilized by the N-terminal domain of the RfaH virulence factor.
 
-!["Structural transformation of the RfaH-CTD. Domain dissociation is triggered upon binding of the NTD (gray) to its target ops (operon polarity suppressor) element DNA, relieving the autoinhibited state and allowing the transformation of the CTD (colored) from an α-helical hairpin (A) towards a five-stranded β-barrel (B). Note that the NTD and CTD are connected by a linker that does not order within the crystals and therefore is not shown in the figure."](figures/html RfaH-CTD.png)
+!["Structural transformation of the RfaH-CTD. Domain dissociation is triggered upon binding of the NTD (gray) to its target ops (operon polarity suppressor) element DNA, relieving the autoinhibited state and allowing the transformation of the CTD (colored) from an α-helical hairpin (A) towards a five-stranded β-barrel (B). Note that the NTD and CTD are connected by a linker that does not order within the crystals and therefore is not shown in the figure."](figures/RfaH-CTD.png)
  
 In the `data/RfaH-CTD` folder of the `GitHub` repository of this Masterclass, you will find: 
 
